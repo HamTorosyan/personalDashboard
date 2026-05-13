@@ -3,20 +3,16 @@
 import { useState, useRef, useEffect } from "react"
 import type { EventColor } from "@/lib/types"
 
-// Excel Office Theme — 6 rows × 10 cols (one col per color family, light→dark)
-export const EXCEL_THEME: string[][] = [
-  ["#FFFFFF","#000000","#E7E6E6","#44546A","#4472C4","#ED7D31","#A5A5A5","#FFC000","#5B9BD5","#70AD47"],
-  ["#F2F2F2","#7F7F7F","#AEAAAA","#D6DCE4","#D9E2F3","#FCE4D6","#EDEDED","#FFF2CC","#DEEAF1","#E2EFDA"],
-  ["#D9D9D9","#595959","#757171","#ACB9CA","#B4C7E7","#F8CBAD","#DBDBDB","#FFE699","#BDD7EE","#C6EFCE"],
-  ["#BFBFBF","#404040","#3B3838","#8496B0","#8FAADC","#F4B084","#BFBFBF","#FFD966","#9DC3E6","#A9D18E"],
-  ["#A6A6A6","#262626","#171515","#323E4F","#2E75B6","#C55A11","#808080","#BF8F00","#2E75B6","#548235"],
-  ["#808080","#0D0D0D","#0C0B0B","#222A35","#1F4E79","#843C0C","#595959","#7F6000","#1F4E79","#375623"],
-]
-
-// Excel Standard Colors row
-export const EXCEL_STANDARD: string[] = [
-  "#C00000","#FF0000","#FFC000","#FFFF00","#92D050",
-  "#00B050","#00B0F0","#0070C0","#002060","#7030A0",
+// 10 hue columns × 8 rows: grayscale on top, then spectrum light→dark
+export const SPECTRUM_GRID: string[][] = [
+  ["#000000","#434343","#666666","#999999","#b7b7b7","#cccccc","#d9d9d9","#efefef","#f3f3f3","#ffffff"],
+  ["#ffcdd2","#ffe0b2","#fff9c4","#dcedc8","#c8e6c9","#b2ebf2","#bbdefb","#c5cae9","#e1bee7","#efebe9"],
+  ["#ef9a9a","#ffcc80","#fff59d","#c5e1a5","#a5d6a7","#80deea","#90caf9","#9fa8da","#ce93d8","#d7ccc8"],
+  ["#e57373","#ffa726","#ffee58","#aed581","#81c784","#4dd0e1","#64b5f6","#7986cb","#ba68c8","#a1887f"],
+  ["#f44336","#ff9800","#ffeb3b","#8bc34a","#4caf50","#00bcd4","#2196f3","#3f51b5","#9c27b0","#795548"],
+  ["#e53935","#fb8c00","#fdd835","#7cb342","#43a047","#00acc1","#1e88e5","#3949ab","#8e24aa","#6d4c41"],
+  ["#c62828","#e65100","#f9a825","#558b2f","#2e7d32","#00838f","#1565c0","#283593","#6a1b9a","#4e342e"],
+  ["#b71c1c","#bf360c","#f57f17","#33691e","#1b5e20","#006064","#0d47a1","#1a237e","#4a148c","#3e2723"],
 ]
 
 export function Swatch({ hex, selected, onClick }: { hex: string; selected: boolean; onClick: () => void }) {
@@ -33,7 +29,7 @@ export function Swatch({ hex, selected, onClick }: { hex: string; selected: bool
           ? "inset 0 0 0 2px rgba(0,0,0,0.45)"
           : undefined,
       }}
-      className="w-[18px] h-[18px] shrink-0 block"
+      className="w-[15px] h-[15px] shrink-0 block"
       onMouseEnter={() => setOver(true)}
       onMouseLeave={() => setOver(false)}
       onClick={onClick}
@@ -45,38 +41,34 @@ export function ColorPicker({
   current,
   onChange,
   onClose,
+  inline = false,
 }: {
   current: EventColor
   onChange: (c: EventColor) => void
   onClose: () => void
+  inline?: boolean
 }) {
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    if (inline) return
     function handleClick(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) onClose()
     }
     document.addEventListener("mousedown", handleClick)
     return () => document.removeEventListener("mousedown", handleClick)
-  }, [onClose])
+  }, [onClose, inline])
 
   function pick(hex: string) { onChange(hex); onClose() }
 
   return (
     <div
       ref={ref}
-      className="absolute top-full left-0 mt-1 z-50 bg-white border border-gray-300 rounded shadow-lg p-2.5"
+      className={`${inline ? "mt-1" : "absolute top-full left-0 mt-1 z-50"} w-fit bg-white dark:bg-gray-800 border-2 border-blue-400 rounded shadow-lg p-2`}
     >
-      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Theme Colors</p>
-      <div className="grid grid-cols-10 w-fit">
-        {EXCEL_THEME.flat().map((hex, i) => (
+      <div className="grid grid-cols-10 gap-px">
+        {SPECTRUM_GRID.flat().map((hex, i) => (
           <Swatch key={i} hex={hex} selected={current === hex} onClick={() => pick(hex)} />
-        ))}
-      </div>
-      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mt-2.5 mb-1">Standard Colors</p>
-      <div className="flex w-fit">
-        {EXCEL_STANDARD.map((hex) => (
-          <Swatch key={hex} hex={hex} selected={current === hex} onClick={() => pick(hex)} />
         ))}
       </div>
     </div>

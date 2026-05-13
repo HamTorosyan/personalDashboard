@@ -41,15 +41,15 @@ export function toDateString(date: Date): string {
 
 /**
  * Calculates grid row start (1-indexed) for an event.
- * Grid starts at 08:00; each row = 30 minutes.
- * Row 1 is reserved for the day header, so row 2 = 08:00.
+ * Grid starts at 00:00; each row = 30 minutes.
+ * Row 1 is reserved for the day header, so row 2 = 00:00.
  */
 export function getEventRowStart(isoStart: string): number {
   const start = parseISO(isoStart)
   const dayStart = new Date(start)
-  dayStart.setHours(8, 0, 0, 0)
-  const minutesSince8am = differenceInMinutes(start, dayStart)
-  return Math.max(2, Math.floor(minutesSince8am / 30) + 2)
+  dayStart.setHours(0, 0, 0, 0)
+  const minutesSinceMidnight = differenceInMinutes(start, dayStart)
+  return Math.max(2, Math.floor(minutesSinceMidnight / 30) + 2)
 }
 
 /**
@@ -76,13 +76,13 @@ export function getWeekDays(weekStart: Date): Date[] {
   return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
 }
 
-/** Returns an array of time labels for the gutter: "08:00", "08:30", ..., "20:00". */
+/** Returns an array of time labels for the gutter: "00:00", "00:30", ..., "23:30". */
 export function getTimeSlots(): string[] {
   const slots: string[] = []
   let current = new Date(0)
-  current.setHours(8, 0, 0, 0)
+  current.setHours(0, 0, 0, 0)
   const end = new Date(0)
-  end.setHours(20, 0, 0, 0)
+  end.setHours(23, 30, 0, 0)
   while (current <= end) {
     slots.push(format(current, "HH:mm"))
     current = addMinutes(current, 30)
@@ -90,5 +90,5 @@ export function getTimeSlots(): string[] {
   return slots
 }
 
-/** Total number of 30-minute rows in the grid (08:00–20:00 inclusive = 25 slots). */
-export const TIME_SLOT_COUNT = 25
+/** Total number of 30-minute rows in the grid (00:00–23:30 = 48 slots). */
+export const TIME_SLOT_COUNT = 48

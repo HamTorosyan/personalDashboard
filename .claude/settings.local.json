@@ -13,7 +13,10 @@
       "Bash(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\Ham\\\\IdeaProjects\\\\personalDashboard\\\\src\\\\app\\\\api\\\\location\")",
       "Bash(Out-Null)",
       "Bash(npm run *)",
-      "Bash(Get-ChildItem *)"
+      "Bash(Get-ChildItem *)",
+      "Bash(Select-Object -First 20)",
+      "WebFetch(domain:drive.google.com)",
+      "WebFetch(domain:drive.usercontent.google.com)"
     ]
   }
 }

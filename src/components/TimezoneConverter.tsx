@@ -412,12 +412,12 @@ function CityAutocomplete({ value, onChange, onSelect, onKeyDown }: CityAutocomp
         value={value}
         onChange={(e) => { onChange(e.target.value); setActiveIdx(-1) }}
         onKeyDown={handleKey}
-        className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-400 w-56"
+        className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-400 w-56"
       />
       {open && (
-        <div className="absolute top-full left-0 mt-1 z-50 w-72 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+        <div className="absolute top-full left-0 mt-1 z-50 w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg overflow-hidden">
           {searching && !suggestions.length && (
-            <div className="px-3 py-2 text-xs text-gray-400 flex items-center gap-1.5">
+            <div className="px-3 py-2 text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
               <Loader2 size={11} className="animate-spin" /> Searching…
             </div>
           )}
@@ -427,14 +427,14 @@ function CityAutocomplete({ value, onChange, onSelect, onKeyDown }: CityAutocomp
               onMouseDown={(e) => { e.preventDefault(); onSelect(s); setSuggestions([]) }}
               className={clsx(
                 "w-full text-left px-3 py-2 text-sm transition-colors border-b border-gray-50 last:border-0",
-                activeIdx === i ? "bg-sky-50" : "hover:bg-gray-50"
+                activeIdx === i ? "bg-sky-50 dark:bg-sky-900/30" : "hover:bg-gray-50 dark:hover:bg-gray-700"
               )}
             >
-              <span className="font-medium text-gray-800">{s.city}</span>
+              <span className="font-medium text-gray-800 dark:text-gray-200">{s.city}</span>
               {s.admin1 && s.admin1 !== s.city && (
-                <span className="text-gray-400 text-xs ml-1">{s.admin1},</span>
+                <span className="text-gray-400 dark:text-gray-500 text-xs ml-1">{s.admin1},</span>
               )}
-              <span className="text-gray-400 text-xs ml-1">{s.country}</span>
+              <span className="text-gray-400 dark:text-gray-500 text-xs ml-1">{s.country}</span>
             </button>
           ))}
         </div>
@@ -490,7 +490,7 @@ function AddCityForm({ onAdd, onCancel }: AddCityFormProps) {
         value={alias}
         onChange={(e) => setAlias(e.target.value)}
         onKeyDown={onKey}
-        className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-400 w-36"
+        className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-400 w-36"
       />
       <button
         onClick={submit}
@@ -502,7 +502,7 @@ function AddCityForm({ onAdd, onCancel }: AddCityFormProps) {
       </button>
       <button
         onClick={onCancel}
-        className="px-3 py-1.5 rounded-md border border-gray-300 text-gray-600 text-sm hover:bg-gray-100 transition-colors"
+        className="px-3 py-1.5 rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
       >
         Cancel
       </button>
@@ -523,7 +523,7 @@ interface TimeSliderProps {
 function TimeSlider({ timeMinutes, isNow, onChange, onReset }: TimeSliderProps) {
   return (
     <div className="flex items-center gap-3 mb-4 px-1">
-      <span className="text-xs text-gray-500 shrink-0">00:00</span>
+      <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0">00:00</span>
       <input
         type="range"
         min={0}
@@ -533,24 +533,23 @@ function TimeSlider({ timeMinutes, isNow, onChange, onReset }: TimeSliderProps) 
         onChange={(e) => onChange(Number(e.target.value))}
         className="flex-1 h-1.5 accent-sky-500 cursor-pointer"
       />
-      <span className="text-xs text-gray-500 shrink-0">23:45</span>
+      <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0">23:45</span>
       <span
         className={clsx(
           "text-xs font-semibold tabular-nums min-w-[3rem] text-center px-2 py-0.5 rounded-full",
-          isNow ? "bg-gray-100 text-gray-500" : "bg-sky-100 text-sky-700"
+          isNow ? "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400" : "bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400"
         )}
       >
         {formatMinutes(timeMinutes)}
       </span>
-      {!isNow && (
-        <button
-          onClick={onReset}
-          className="text-gray-400 hover:text-gray-600 transition-colors"
-          title="Reset to now"
-        >
-          <RotateCcw size={13} />
-        </button>
-      )}
+      <button
+        onClick={onReset}
+        disabled={isNow}
+        className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors disabled:opacity-30 disabled:cursor-default"
+        title="Reset to now"
+      >
+        <RotateCcw size={13} />
+      </button>
     </div>
   )
 }
@@ -609,17 +608,17 @@ export default function TimezoneConverter() {
   return (
     <section>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-          <Clock size={18} className="text-gray-500" />
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+          <Clock size={18} className="text-gray-500 dark:text-gray-400" />
           Time Zones
         </h2>
         {!showForm && (
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-gray-300 text-gray-600 text-sm hover:bg-gray-100 transition-colors"
+            title="Add city"
+            className="p-1.5 rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
-            <Plus size={14} />
-            Add city
+            <Plus size={16} />
           </button>
         )}
       </div>
@@ -627,7 +626,7 @@ export default function TimezoneConverter() {
       {showForm && <AddCityForm onAdd={handleAdd} onCancel={() => setShowForm(false)} />}
 
       {cities.length === 0 && !showForm ? (
-        <p className="text-gray-400 text-sm">
+        <p className="text-gray-400 dark:text-gray-500 text-sm">
           No cities added yet.{" "}
           <button onClick={() => setShowForm(true)} className="text-sky-600 hover:underline">
             Add one

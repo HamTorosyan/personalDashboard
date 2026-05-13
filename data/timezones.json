@@ -1,5 +1,14 @@
 {
-  "currentCity": null,
+  "currentCity": {
+    "id": "current",
+    "alias": "Home",
+    "city": "Yerevan",
+    "country": "Armenia",
+    "timezone": "Asia/Yerevan",
+    "latitude": 40.1814,
+    "longitude": 44.5102,
+    "isPinned": true
+  },
   "savedCities": [
     {
       "id": "1778629006271",

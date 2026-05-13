@@ -70,5 +70,14 @@ export function useIcsFeeds() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
   }
 
-  return { feeds, addFeed, removeFeed, updateFeedColor, toggleFeedVisibility }
+  function updateFeed(id: string, label: string, url: string, color: EventColor): string | null {
+    if (!label.trim()) return "Label is required"
+    try { new URL(url) } catch { return "Invalid URL — paste the full ICS link" }
+    const next = feeds.map((f) => f.id === id ? { ...f, label: label.trim(), url: url.trim(), color } : f)
+    setFeeds(next)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+    return null
+  }
+
+  return { feeds, addFeed, removeFeed, updateFeed, updateFeedColor, toggleFeedVisibility }
 }

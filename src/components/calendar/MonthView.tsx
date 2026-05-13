@@ -25,11 +25,11 @@ export default function MonthView({ date, events }: MonthViewProps) {
   const days = Array.from({ length: 42 }, (_, i) => addDays(gridStart, i))
 
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+    <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900">
       {/* Weekday header */}
-      <div className="grid grid-cols-7 border-b border-gray-200 bg-gray-50">
+      <div className="grid grid-cols-7 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
         {WEEKDAYS.map((d) => (
-          <div key={d} className="py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">
+          <div key={d} className="py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
             {d}
           </div>
         ))}
@@ -51,8 +51,12 @@ export default function MonthView({ date, events }: MonthViewProps) {
             <div
               key={i}
               className={clsx(
-                "min-h-[6.5rem] border-b border-r border-gray-100 p-1.5",
-                !inMonth && "bg-gray-50/70",
+                "min-h-[6.5rem] border-b border-r border-gray-100 dark:border-gray-800 p-1.5",
+                today
+                  ? "bg-blue-50/60 dark:bg-blue-950/20"
+                  : !inMonth
+                  ? "bg-gray-50/70 dark:bg-gray-800/50"
+                  : "",
                 isLastCol && "border-r-0"
               )}
             >
@@ -63,8 +67,8 @@ export default function MonthView({ date, events }: MonthViewProps) {
                   today
                     ? "bg-blue-600 text-white font-bold"
                     : inMonth
-                    ? "text-gray-800"
-                    : "text-gray-400"
+                    ? "text-gray-800 dark:text-gray-200"
+                    : "text-gray-400 dark:text-gray-600"
                 )}
               >
                 {format(day, "d")}
@@ -95,7 +99,7 @@ export default function MonthView({ date, events }: MonthViewProps) {
                   )
                 })}
                 {overflow > 0 && (
-                  <div className="text-[11px] text-gray-400 pl-1">+{overflow} more</div>
+                  <div className="text-[11px] text-gray-400 dark:text-gray-500 pl-1">+{overflow} more</div>
                 )}
               </div>
             </div>

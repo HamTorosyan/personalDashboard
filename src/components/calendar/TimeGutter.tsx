@@ -8,7 +8,7 @@ export default function TimeGutter() {
       {slots.map((label, i) => (
         <div
           key={label}
-          className="text-right pr-2 text-xs text-gray-400 leading-none select-none"
+          className="text-right pr-2 text-xs text-gray-400 dark:text-gray-600 leading-none select-none"
           style={{ gridColumn: 1, gridRow: i + 1 }}
         >
           {label}

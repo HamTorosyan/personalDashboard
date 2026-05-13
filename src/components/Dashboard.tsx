@@ -2,32 +2,31 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react"
 import TwoWeekCalendar from "@/components/calendar/TwoWeekCalendar"
-import CountrySelector, { STORAGE_KEY, CountryFlag } from "@/components/CountrySelector"
-import IcsFeedManager from "@/components/IcsFeedManager"
 import TimezoneConverter from "@/components/TimezoneConverter"
-import { ColorPicker } from "@/components/ColorPicker"
 import { useCalendarEvents } from "@/hooks/useCalendarEvents"
 import { useIcsFeeds } from "@/hooks/useIcsFeeds"
-import { RefreshCw } from "lucide-react"
+import { RefreshCw, Moon, Sun, Bell } from "lucide-react"
 
+const SELECTED_COUNTRIES_KEY = "dashboard.selectedCountries"
 const HIDDEN_COUNTRIES_KEY = "dashboard.hiddenCountries"
 const COUNTRY_COLORS_KEY = "dashboard.countryColors"
-const DEFAULT_HOLIDAY_COLOR = "#16a34a"
-
-const countryName = new Intl.DisplayNames(["en"], { type: "region" })
 
 export default function Dashboard() {
   const [selectedCountries, setSelectedCountries] = useState<string[]>([])
   const [hiddenCountries, setHiddenCountries] = useState<string[]>([])
   const [countryColors, setCountryColors] = useState<Record<string, string>>({})
-  const [activePickerCode, setActivePickerCode] = useState<string | null>(null)
   const [calendarWide, setCalendarWide] = useState(true)
+  const [isDark, setIsDark] = useState(false)
   const handleLayoutHint = useCallback((wide: boolean) => setCalendarWide(wide), [])
-  const { feeds, addFeed, removeFeed, updateFeedColor, toggleFeedVisibility } = useIcsFeeds()
+  const { feeds, addFeed, removeFeed, updateFeed, updateFeedColor, toggleFeedVisibility } = useIcsFeeds()
 
   useEffect(() => {
+    const storedTheme = localStorage.getItem("dashboard.theme")
+    const dark = storedTheme === "dark" || (!storedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches)
+    setIsDark(dark)
+    document.documentElement.classList.toggle("dark", dark)
     try {
-      const stored = localStorage.getItem(STORAGE_KEY)
+      const stored = localStorage.getItem(SELECTED_COUNTRIES_KEY)
       if (stored) setSelectedCountries(JSON.parse(stored))
     } catch {}
     try {
@@ -42,8 +41,27 @@ export default function Dashboard() {
 
   const { events, isLoading, error, feedErrors, refetch } = useCalendarEvents(selectedCountries, feeds)
 
-  function getCountryColor(code: string): string {
-    return countryColors[code] ?? DEFAULT_HOLIDAY_COLOR
+  function addCountry(code: string, color: string) {
+    setSelectedCountries((prev) => {
+      if (prev.includes(code)) return prev
+      const next = [...prev, code]
+      localStorage.setItem(SELECTED_COUNTRIES_KEY, JSON.stringify(next))
+      return next
+    })
+    updateCountryColor(code, color)
+  }
+
+  function removeCountry(code: string) {
+    setSelectedCountries((prev) => {
+      const next = prev.filter((c) => c !== code)
+      localStorage.setItem(SELECTED_COUNTRIES_KEY, JSON.stringify(next))
+      return next
+    })
+    setHiddenCountries((prev) => {
+      const next = prev.filter((c) => c !== code)
+      localStorage.setItem(HIDDEN_COUNTRIES_KEY, JSON.stringify(next))
+      return next
+    })
   }
 
   function updateCountryColor(code: string, color: string) {
@@ -73,6 +91,13 @@ export default function Dashboard() {
       })
   }, [events, feeds, hiddenCountries, countryColors])
 
+  function toggleTheme() {
+    const next = !isDark
+    setIsDark(next)
+    document.documentElement.classList.toggle("dark", next)
+    localStorage.setItem("dashboard.theme", next ? "dark" : "light")
+  }
+
   function toggleCountryVisibility(code: string) {
     setHiddenCountries((prev) => {
       const next = prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
@@ -82,119 +107,70 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-gray-50">
+    <div className="h-screen flex flex-col overflow-hidden bg-gray-50 dark:bg-gray-900">
 
       {/* ── Top bar ── */}
-      <header className="shrink-0 px-5 py-3 bg-white border-b border-gray-200 flex items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-gray-900 whitespace-nowrap">Personal Dashboard</h1>
-        <button
-          onClick={refetch}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-gray-300 text-gray-600 text-sm hover:bg-gray-100 transition-colors"
-        >
-          <RefreshCw size={14} />
-          Refresh
-        </button>
+      <header className="shrink-0 px-5 py-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-3">
+        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">Personal Dashboard</h1>
+        <div className="flex items-center gap-2">
+          <button
+            title="Notifications"
+            className="p-1.5 rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            <Bell size={16} />
+          </button>
+          <button
+            onClick={refetch}
+            title="Refresh"
+            className="p-1.5 rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            <RefreshCw size={16} />
+          </button>
+          <button
+            onClick={toggleTheme}
+            title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            className="p-1.5 rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            {isDark ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+        </div>
       </header>
 
       {/* ── Body ── */}
       <div className="flex flex-1 overflow-hidden">
 
-        {/* Left — Calendar */}
+        {/* ══ Section: Calendar Preview ══════════════════════════════════════════ */}
         <div
-          className={`overflow-y-auto p-4 border-r border-gray-200 bg-white transition-[width] duration-300 ${calendarWide ? "w-[60%]" : "w-[40%]"}`}
+          className={`overflow-hidden flex flex-col p-4 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 transition-[width] duration-300 ${calendarWide ? "w-[60%]" : "w-[40%]"}`}
         >
-          <TwoWeekCalendar events={visibleEvents} isLoading={isLoading} onLayoutHint={handleLayoutHint} />
+          <TwoWeekCalendar
+            events={visibleEvents}
+            isLoading={isLoading}
+            onLayoutHint={handleLayoutHint}
+            feeds={feeds}
+            feedErrors={feedErrors}
+            onAddFeed={addFeed}
+            onRemoveFeed={removeFeed}
+            onUpdateFeed={updateFeed}
+            onUpdateFeedColor={updateFeedColor}
+            onToggleFeedVisibility={toggleFeedVisibility}
+            selectedCountries={selectedCountries}
+            hiddenCountries={hiddenCountries}
+            countryColors={countryColors}
+            onAddCountry={addCountry}
+            onRemoveCountry={removeCountry}
+            onUpdateCountryColor={updateCountryColor}
+            onToggleCountryVisibility={toggleCountryVisibility}
+            error={error}
+          />
         </div>
 
-        {/* Right — two stacked panels */}
-        <div className={`shrink-0 flex flex-col overflow-hidden transition-[width] duration-300 ${calendarWide ? "w-[40%]" : "w-[60%]"}`}>
-
-          {/* Right-top — calendar controls */}
-          <div className="flex-[2] overflow-y-auto p-5 border-b border-gray-200 bg-white flex flex-col gap-5">
-
-            {/* ICS feeds */}
-            <IcsFeedManager
-              feeds={feeds}
-              feedErrors={feedErrors}
-              onAdd={addFeed}
-              onRemove={removeFeed}
-              onUpdateColor={updateFeedColor}
-              onToggleVisibility={toggleFeedVisibility}
-            />
-
-            {/* Countries */}
-            <div className="flex flex-col gap-2">
-              <CountrySelector selected={selectedCountries} onChange={setSelectedCountries} />
-              {selectedCountries.length > 0 && (
-                <div className="flex flex-wrap gap-x-4 gap-y-1.5 pl-0.5">
-                  {selectedCountries.map((code) => (
-                    <label key={code} className="relative flex items-center gap-2 text-sm cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={!hiddenCountries.includes(code)}
-                        onChange={() => toggleCountryVisibility(code)}
-                        className="w-3.5 h-3.5 rounded accent-green-600 cursor-pointer"
-                      />
-                      {/* Color dot — opens picker */}
-                      <button
-                        type="button"
-                        title="Change holiday color"
-                        onClick={(e) => {
-                          e.preventDefault()
-                          setActivePickerCode(activePickerCode === code ? null : code)
-                        }}
-                        style={{ backgroundColor: getCountryColor(code) }}
-                        className="w-3 h-3 rounded-sm shrink-0 ring-1 ring-transparent hover:ring-gray-400 transition-all border border-black/10"
-                      />
-                      {activePickerCode === code && (
-                        <ColorPicker
-                          current={getCountryColor(code)}
-                          onChange={(color) => {
-                            updateCountryColor(code, color)
-                            setActivePickerCode(null)
-                          }}
-                          onClose={() => setActivePickerCode(null)}
-                        />
-                      )}
-                      <CountryFlag code={code} size={16} />
-                      <span className={hiddenCountries.includes(code) ? "text-gray-400" : "text-gray-700"}>
-                        {countryName.of(code) ?? code}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Legend */}
-            <div className="flex items-center gap-4 flex-wrap">
-              <Legend color="bg-purple-500" label="Teams meeting" />
-              <Legend color="bg-gray-400" label="Cancelled" />
-            </div>
-
-            {error && (
-              <div className="px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
-                {error}
-              </div>
-            )}
-          </div>
-
-          {/* Right-bottom — time zones */}
-          <div className="flex-[3] overflow-y-auto p-5 bg-gray-50">
-            <TimezoneConverter />
-          </div>
-
+        {/* ══ Section: Time Zones ════════════════════════════════════════════════ */}
+        <div className={`overflow-y-auto p-5 bg-gray-50 dark:bg-gray-800 transition-[width] duration-300 ${calendarWide ? "w-[40%]" : "w-[60%]"}`}>
+          <TimezoneConverter />
         </div>
+
       </div>
-    </div>
-  )
-}
-
-function Legend({ color, label }: { color: string; label: string }) {
-  return (
-    <div className="flex items-center gap-1.5">
-      <span className={`w-3 h-3 rounded-sm ${color}`} />
-      <span className="text-xs text-gray-500">{label}</span>
     </div>
   )
 }

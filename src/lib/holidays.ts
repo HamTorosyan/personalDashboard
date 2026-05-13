@@ -15,7 +15,7 @@ interface NagerHoliday {
 export function normalizeHoliday(raw: NagerHoliday): CalendarEvent {
   return {
     id: `holiday-${raw.date}-${raw.countryCode}`,
-    title: raw.localName || raw.name,
+    title: raw.name || raw.localName,
     source: "holiday",
     start: raw.date,
     end: raw.date,
