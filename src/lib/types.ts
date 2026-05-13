@@ -1,17 +1,14 @@
-export type EventSource = "microsoft" | "zoom" | "holiday"
+export type EventSource = "holiday" | "ics"
 
-export type EventColor = "blue" | "purple" | "cyan" | "green" | "gray"
+export type EventColor = string
 
 export interface CalendarEvent {
-  /** Prefixed: "ms-<id>", "zoom-<uuid>", "holiday-<date>-<countryCode>" */
   id: string
   title: string
   source: EventSource
-  /** ISO 8601 with timezone offset e.g. "2026-05-11T09:00:00+04:00" */
   start: string
   end: string
   isAllDay: boolean
-  /** blue=Outlook, purple=Teams, cyan=Zoom, green=Holiday, gray=cancelled */
   color: EventColor
   location?: string
   meetingUrl?: string
@@ -21,6 +18,8 @@ export interface CalendarEvent {
   bodyPreview?: string
   /** Populated for holiday events */
   countryCode?: string
+  /** Populated for ICS events — matches IcsFeed.id */
+  feedId?: string
 }
 
 export interface CalendarResponse {
@@ -28,11 +27,4 @@ export interface CalendarResponse {
   rangeStart: string
   rangeEnd: string
   fetchedAt: string
-}
-
-export interface MicrosoftAccountToken {
-  oid: string
-  accessToken: string
-  refreshToken: string
-  expiresAt: number
 }

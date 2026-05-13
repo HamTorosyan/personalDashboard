@@ -9,7 +9,7 @@ export default function TimeGutter() {
         <div
           key={label}
           className="text-right pr-2 text-xs text-gray-400 leading-none select-none"
-          style={{ gridColumn: 1, gridRow: i + 2 }}
+          style={{ gridColumn: 1, gridRow: i + 1 }}
         >
           {label}
         </div>

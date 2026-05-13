@@ -17,11 +17,12 @@ import EventBlock from "./EventBlock"
 interface WeekGridProps {
   weekStart: Date
   events: CalendarEvent[]
-  label: string
+  label?: string
+  dayCount?: number
 }
 
-export default function WeekGrid({ weekStart, events, label }: WeekGridProps) {
-  const days = getWeekDays(weekStart)
+export default function WeekGrid({ weekStart, events, label, dayCount = 7 }: WeekGridProps) {
+  const days = getWeekDays(weekStart).slice(0, dayCount)
   const timeSlots = getTimeSlots()
 
   // Split events into all-day and timed
@@ -88,7 +89,7 @@ export default function WeekGrid({ weekStart, events, label }: WeekGridProps) {
 
   return (
     <div className="mb-6">
-      <h2 className="text-sm font-semibold text-gray-600 mb-1 px-2">{label}</h2>
+      {label && <h2 className="text-sm font-semibold text-gray-600 mb-1 px-2">{label}</h2>}
 
       {/*
         CSS Grid:
@@ -100,7 +101,7 @@ export default function WeekGrid({ weekStart, events, label }: WeekGridProps) {
       <div
         className="grid border border-gray-200 rounded-lg overflow-hidden bg-white"
         style={{
-          gridTemplateColumns: `3rem repeat(7, 1fr)`,
+          gridTemplateColumns: `3rem repeat(${dayCount}, 1fr)`,
           gridTemplateRows: `auto repeat(${TIME_SLOT_COUNT}, 3.5rem)`,
         }}
       >

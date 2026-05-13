@@ -16,10 +16,13 @@ const COLOR_MAP: Record<string, string> = {
   cyan: "bg-cyan-500 hover:bg-cyan-600 border-cyan-700",
   green: "bg-green-600 hover:bg-green-700 border-green-800",
   gray: "bg-gray-400 hover:bg-gray-500 border-gray-600 line-through",
+  orange: "bg-orange-500 hover:bg-orange-600 border-orange-700",
 }
 
 export default function EventBlock({ event, style }: EventBlockProps) {
-  const colorClasses = COLOR_MAP[event.color] ?? COLOR_MAP.blue
+  const isHex = event.color.startsWith("#")
+  const colorClasses = isHex ? "" : (COLOR_MAP[event.color] ?? COLOR_MAP.blue)
+  const bgStyle = isHex ? { backgroundColor: event.color } : undefined
 
   function handleClick() {
     if (event.meetingUrl) {
@@ -45,7 +48,7 @@ export default function EventBlock({ event, style }: EventBlockProps) {
         event.meetingUrl && "cursor-pointer",
         event.isCancelled && "opacity-60"
       )}
-      style={style}
+      style={{ ...bgStyle, ...style }}
     >
       <div className="flex items-center gap-1 min-w-0">
         {event.isOnlineMeeting && (

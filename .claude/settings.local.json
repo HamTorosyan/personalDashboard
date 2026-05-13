@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(tree \"C:\\\\Users\\\\Ham\\\\IdeaProjects\\\\personalDashboard\" -L 3)",
+      "Bash(npx tsc *)",
+      "Bash(npx auth *)",
+      "Bash(node -e \"const c=require\\('crypto'\\);console.log\\(c.randomBytes\\(32\\).toString\\('base64'\\)\\)\")",
+      "Bash(npm install *)",
+      "Bash(findstr rrule *)",
+      "Bash(node -e \"const { RRule } = require\\('rrule'\\); console.log\\('rrule ok', RRule.WEEKLY\\)\")",
+      "Bash(node -e ' *)",
+      "Bash(xargs grep -l -i \"timezone\\\\|TimezoneConverter\\\\|useTimezones\")",
+      "Bash(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\Ham\\\\IdeaProjects\\\\personalDashboard\\\\src\\\\app\\\\api\\\\location\")",
+      "Bash(Out-Null)",
+      "Bash(npm run *)",
+      "Bash(Get-ChildItem *)"
+    ]
+  }
+}

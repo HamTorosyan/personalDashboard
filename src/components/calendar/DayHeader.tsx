@@ -25,18 +25,22 @@ export default function DayHeader({ date, isToday, allDayEvents = [] }: DayHeade
       >
         {day}
       </span>
-      {allDayEvents.map((ev) => (
-        <div
-          key={ev.id}
-          className={clsx(
-            "w-full mt-0.5 px-1 py-0.5 rounded text-xs text-white truncate",
-            ALL_DAY_COLOR_MAP[ev.color] ?? "bg-gray-400"
-          )}
-          title={ev.title}
-        >
-          {ev.title}
-        </div>
-      ))}
+      {allDayEvents.map((ev) => {
+        const isHex = ev.color.startsWith("#")
+        return (
+          <div
+            key={ev.id}
+            className={clsx(
+              "w-full mt-0.5 px-1 py-0.5 rounded text-xs text-white truncate",
+              !isHex && (ALL_DAY_COLOR_MAP[ev.color] ?? "bg-gray-400")
+            )}
+            style={isHex ? { backgroundColor: ev.color } : undefined}
+            title={ev.title}
+          >
+            {ev.title}
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -47,4 +51,5 @@ const ALL_DAY_COLOR_MAP: Record<string, string> = {
   cyan: "bg-cyan-500",
   green: "bg-green-600",
   gray: "bg-gray-400",
+  orange: "bg-orange-500",
 }
