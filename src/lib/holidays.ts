@@ -30,9 +30,7 @@ export async function fetchHolidays(
   rangeStart: Date,
   rangeEnd: Date
 ): Promise<CalendarEvent[]> {
-  const years = new Set<number>()
-  years.add(rangeStart.getFullYear())
-  years.add(rangeEnd.getFullYear())
+  const years = new Set([rangeStart.getFullYear(), rangeEnd.getFullYear()])
 
   const requests = Array.from(years).flatMap((year) =>
     countryCodes.map(async (code) => {
@@ -42,12 +40,7 @@ export async function fetchHolidays(
       )
       if (!response.ok) return []
       const data: NagerHoliday[] = await response.json()
-      return data
-        .filter((h) => {
-          const d = new Date(h.date)
-          return d >= rangeStart && d <= rangeEnd
-        })
-        .map(normalizeHoliday)
+      return data.map(normalizeHoliday)
     })
   )
 

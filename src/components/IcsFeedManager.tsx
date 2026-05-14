@@ -22,16 +22,12 @@ interface IcsFeedManagerProps {
 function FeedChip({
   feed,
   error,
-  isPickerOpen,
-  onTogglePicker,
   onRemove,
   onEdit,
   onToggleVisibility,
 }: {
   feed: IcsFeed
   error?: string
-  isPickerOpen: boolean
-  onTogglePicker: () => void
   onRemove: () => void
   onEdit: () => void
   onToggleVisibility: () => void
@@ -50,14 +46,9 @@ function FeedChip({
         onChange={onToggleVisibility}
         className="w-3 h-3 rounded accent-blue-500 cursor-pointer shrink-0"
       />
-      <button
-        onClick={(e) => { e.preventDefault(); onTogglePicker() }}
-        title="Change color"
+      <span
         style={{ backgroundColor: feed.color }}
-        className={clsx(
-          "w-2.5 h-2.5 rounded-full shrink-0 ring-1 transition-all border border-black/10",
-          isPickerOpen ? "ring-gray-500" : "ring-transparent hover:ring-gray-400"
-        )}
+        className="w-2.5 h-2.5 rounded-full shrink-0 border border-black/10"
       />
       {feed.label}
       {error && (
@@ -271,7 +262,6 @@ function AddFeedForm({
 export default function IcsFeedManager({ feeds, feedErrors, onAdd, onRemove, onUpdate, onUpdateColor, onToggleVisibility }: IcsFeedManagerProps) {
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [pickerFeedId, setPickerFeedId] = useState<string | null>(null)
 
   function handleAdd(label: string, url: string, color: EventColor) {
     const err = onAdd(label, url, color)
@@ -287,19 +277,12 @@ export default function IcsFeedManager({ feeds, feedErrors, onAdd, onRemove, onU
 
   function startEdit(id: string) {
     setShowAddForm(false)
-    setPickerFeedId(null)
     setEditingId(id)
   }
 
   function startAdd() {
     setEditingId(null)
-    setPickerFeedId(null)
     setShowAddForm(true)
-  }
-
-  function togglePicker(id: string) {
-    setEditingId(null)
-    setPickerFeedId((prev) => (prev === id ? null : id))
   }
 
   return (
@@ -315,8 +298,6 @@ export default function IcsFeedManager({ feeds, feedErrors, onAdd, onRemove, onU
             key={feed.id}
             feed={feed}
             error={feedErrors[feed.id]}
-            isPickerOpen={pickerFeedId === feed.id}
-            onTogglePicker={() => togglePicker(feed.id)}
             onRemove={() => onRemove(feed.id)}
             onEdit={() => startEdit(feed.id)}
             onToggleVisibility={() => onToggleVisibility(feed.id)}
@@ -333,19 +314,6 @@ export default function IcsFeedManager({ feeds, feedErrors, onAdd, onRemove, onU
           </button>
         )}
       </div>
-
-      {/* Inline color picker for chip color dots */}
-      {pickerFeedId && (() => {
-        const feed = feeds.find((f) => f.id === pickerFeedId)
-        return feed ? (
-          <ColorPicker
-            current={feed.color}
-            onChange={(c) => { onUpdateColor(pickerFeedId, c as EventColor); setPickerFeedId(null) }}
-            onClose={() => setPickerFeedId(null)}
-            inline
-          />
-        ) : null
-      })()}
 
       {editingId && (() => {
         const feed = feeds.find((f) => f.id === editingId)

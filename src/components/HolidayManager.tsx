@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Globe, Plus, X } from "lucide-react"
+import { Globe, Plus, X, Pencil } from "lucide-react"
 import { clsx } from "clsx"
 import type { EventColor } from "@/lib/types"
 import { ColorPicker } from "@/components/ColorPicker"
@@ -191,7 +191,7 @@ function CountryChip({
   hidden,
   color,
   onRemove,
-  onUpdateColor,
+  onEdit,
   onToggleVisibility,
 }: {
   code: string
@@ -199,11 +199,9 @@ function CountryChip({
   hidden: boolean
   color: string
   onRemove: () => void
-  onUpdateColor: (c: EventColor) => void
+  onEdit: () => void
   onToggleVisibility: () => void
 }) {
-  const [showPicker, setShowPicker] = useState(false)
-
   return (
     <label
       className={clsx(
@@ -215,31 +213,86 @@ function CountryChip({
         type="checkbox"
         checked={!hidden}
         onChange={onToggleVisibility}
-        className="w-3 h-3 rounded accent-green-600 cursor-pointer shrink-0"
+        className="w-3 h-3 rounded accent-blue-500 cursor-pointer shrink-0"
       />
-      <button
-        onClick={(e) => { e.preventDefault(); setShowPicker((v) => !v) }}
-        title="Change color"
+      <span
         style={{ backgroundColor: color }}
-        className="w-2.5 h-2.5 rounded-full shrink-0 ring-1 ring-transparent hover:ring-gray-400 transition-all border border-black/10"
+        className="w-2.5 h-2.5 rounded-full shrink-0 border border-black/10"
       />
-      {showPicker && (
-        <ColorPicker
-          current={color}
-          onChange={onUpdateColor}
-          onClose={() => setShowPicker(false)}
-        />
-      )}
       <CountryFlag code={code} size={14} />
       {name}
       <button
+        onClick={(e) => { e.preventDefault(); onEdit() }}
+        className="ml-0.5 text-gray-400 dark:text-gray-500 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+        title="Edit color"
+      >
+        <Pencil size={10} />
+      </button>
+      <button
         onClick={(e) => { e.preventDefault(); onRemove() }}
-        className="ml-0.5 text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+        className="text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
         title="Remove country"
       >
         <X size={11} />
       </button>
     </label>
+  )
+}
+
+// ─── EditCountryForm ──────────────────────────────────────────────────────────
+
+function EditCountryForm({
+  code,
+  name,
+  currentColor,
+  onSave,
+  onCancel,
+}: {
+  code: string
+  name: string
+  currentColor: string
+  onSave: (color: EventColor) => void
+  onCancel: () => void
+}) {
+  const [color, setColor] = useState<EventColor>(currentColor)
+  const [showPicker, setShowPicker] = useState(false)
+
+  return (
+    <div className="flex flex-col gap-2 p-3 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20">
+      <div className="flex items-center gap-2">
+        <CountryFlag code={code} size={16} />
+        <span className="text-sm text-gray-700 dark:text-gray-200 font-medium flex-1">{name}</span>
+        <button
+          type="button"
+          onClick={() => setShowPicker((v) => !v)}
+          title="Pick color"
+          style={{ backgroundColor: color }}
+          className="w-7 h-7 rounded-full border-2 border-white dark:border-black shadow ring-1 ring-gray-300 hover:ring-gray-400 transition-all shrink-0"
+        />
+      </div>
+      {showPicker && (
+        <ColorPicker
+          current={color}
+          onChange={(c) => { setColor(c); setShowPicker(false) }}
+          onClose={() => setShowPicker(false)}
+          inline
+        />
+      )}
+      <div className="flex gap-2">
+        <button
+          onClick={onCancel}
+          className="flex-1 py-1.5 rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={() => onSave(color)}
+          className="flex-1 py-1.5 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700 transition-colors"
+        >
+          Save
+        </button>
+      </div>
+    </div>
   )
 }
 
@@ -369,10 +422,16 @@ export default function HolidayManager({
   onToggleVisibility,
 }: HolidayManagerProps) {
   const [showAddForm, setShowAddForm] = useState(false)
+  const [editingCode, setEditingCode] = useState<string | null>(null)
 
   function handleAdd(code: string, color: EventColor) {
     onAdd(code, color)
     setShowAddForm(false)
+  }
+
+  function startEdit(code: string) {
+    setShowAddForm(false)
+    setEditingCode(code)
   }
 
   return (
@@ -393,13 +452,13 @@ export default function HolidayManager({
               hidden={hiddenCountries.includes(code)}
               color={countryColors[code] ?? DEFAULT_HOLIDAY_COLOR}
               onRemove={() => onRemove(code)}
-              onUpdateColor={(color) => onUpdateColor(code, color)}
+              onEdit={() => startEdit(code)}
               onToggleVisibility={() => onToggleVisibility(code)}
             />
           )
         })}
 
-        {!showAddForm && (
+        {!showAddForm && !editingCode && (
           <button
             onClick={() => setShowAddForm(true)}
             className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-dashed border-gray-300 dark:border-gray-600 text-xs text-gray-500 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
@@ -409,6 +468,19 @@ export default function HolidayManager({
           </button>
         )}
       </div>
+
+      {editingCode && (() => {
+        const country = COUNTRIES.find((c) => c.code === editingCode)
+        return country ? (
+          <EditCountryForm
+            code={editingCode}
+            name={country.name}
+            currentColor={countryColors[editingCode] ?? DEFAULT_HOLIDAY_COLOR}
+            onSave={(color) => { onUpdateColor(editingCode, color); setEditingCode(null) }}
+            onCancel={() => setEditingCode(null)}
+          />
+        ) : null
+      })()}
 
       {showAddForm && (
         <AddCountryForm
