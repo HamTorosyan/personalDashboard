@@ -25,18 +25,41 @@ export const FEED_COLORS: string[] = [
   "#C00000","#FF0000","#FFC000","#FFFF00","#92D050","#00B050","#00B0F0","#0070C0","#002060","#7030A0",
 ]
 
+function saveToServer(feeds: IcsFeed[]) {
+  fetch("/api/settings", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ icsFeeds: feeds }),
+  }).catch(() => {})
+}
+
 export function useIcsFeeds() {
   const [feeds, setFeeds] = useState<IcsFeed[]>([])
 
   useEffect(() => {
+    let localFeeds: IcsFeed[] = []
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
       if (stored) {
-        // Migrate older feeds that don't have `visible`
         const parsed: IcsFeed[] = JSON.parse(stored)
-        setFeeds(parsed.map((f) => ({ ...f, visible: f.visible ?? true })))
+        localFeeds = parsed.map((f) => ({ ...f, visible: f.visible ?? true }))
+        setFeeds(localFeeds)
       }
     } catch {}
+
+    fetch("/api/settings")
+      .then((r) => (r.ok ? r.json() : Promise.reject(`HTTP ${r.status}`)))
+      .then((data: { icsFeeds?: IcsFeed[] }) => {
+        console.log("[IcsFeeds] server data:", JSON.stringify(data?.icsFeeds?.length), "feeds")
+        if ("icsFeeds" in data && Array.isArray(data.icsFeeds)) {
+          const serverFeeds = data.icsFeeds.map((f) => ({ ...f, visible: f.visible ?? true }))
+          setFeeds(serverFeeds)
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(serverFeeds))
+        } else if (localFeeds.length > 0) {
+          saveToServer(localFeeds)
+        }
+      })
+      .catch((e) => { console.error("[IcsFeeds] settings fetch failed:", e) })
   }, [])
 
   function addFeed(label: string, url: string, color: EventColor): string | null {
@@ -49,6 +72,7 @@ export function useIcsFeeds() {
     ]
     setFeeds(next)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+    saveToServer(next)
     return null
   }
 
@@ -56,18 +80,21 @@ export function useIcsFeeds() {
     const next = feeds.filter((f) => f.id !== id)
     setFeeds(next)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+    saveToServer(next)
   }
 
   function updateFeedColor(id: string, color: EventColor) {
     const next = feeds.map((f) => (f.id === id ? { ...f, color } : f))
     setFeeds(next)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+    saveToServer(next)
   }
 
   function toggleFeedVisibility(id: string) {
     const next = feeds.map((f) => (f.id === id ? { ...f, visible: !f.visible } : f))
     setFeeds(next)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+    saveToServer(next)
   }
 
   function updateFeed(id: string, label: string, url: string, color: EventColor): string | null {
@@ -76,6 +103,7 @@ export function useIcsFeeds() {
     const next = feeds.map((f) => f.id === id ? { ...f, label: label.trim(), url: url.trim(), color } : f)
     setFeeds(next)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+    saveToServer(next)
     return null
   }
 

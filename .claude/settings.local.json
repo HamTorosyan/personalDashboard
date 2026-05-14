@@ -17,7 +17,13 @@
       "Bash(Select-Object -First 20)",
       "WebFetch(domain:drive.google.com)",
       "WebFetch(domain:drive.usercontent.google.com)",
-      "Bash(git worktree *)"
+      "Bash(git worktree *)",
+      "Bash(curl -s --max-time 15 -A \"PersonalDashboard/1.0\" \"https://calendar.google.com/calendar/ical/hamazasp.torosyan%40gmail.com/private-52ff337036221031fcf023dfc75c491e/basic.ics\")",
+      "Bash(python3 -m json.tool)",
+      "Bash(node *)",
+      "Bash(curl -s \"https://calendar.google.com/calendar/ical/hamazasp.torosyan%40gmail.com/private-52ff337036221031fcf023dfc75c491e/basic.ics\")",
+      "Bash(curl -s http://localhost:3000/)",
+      "Bash(curl *)"
     ]
   }
 }

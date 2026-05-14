@@ -54,11 +54,12 @@ export default function WeekGrid({
     return () => clearInterval(id)
   }, [])
 
-  // Auto-scroll to (currentHour - 1) on mount
+  // Auto-scroll: show current time if today is visible, otherwise start at 8 AM
   useEffect(() => {
     const el = scrollRef.current
     if (!el) return
-    const targetHour = Math.max(0, now.getHours() - 1)
+    const todayVisible = days.some((d) => isToday(d))
+    const targetHour = todayVisible ? Math.max(8, now.getHours() - 1) : 8
     el.scrollTop = targetHour * 2 * ROW_HEIGHT_PX
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 

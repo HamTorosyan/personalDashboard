@@ -5,11 +5,27 @@ import TwoWeekCalendar from "@/components/calendar/TwoWeekCalendar"
 import TimezoneConverter from "@/components/TimezoneConverter"
 import { useCalendarEvents } from "@/hooks/useCalendarEvents"
 import { useIcsFeeds } from "@/hooks/useIcsFeeds"
-import { RefreshCw, Moon, Sun, Bell } from "lucide-react"
+import { RefreshCw, Check, Moon, Sun, Bell } from "lucide-react"
+import { clsx } from "clsx"
 
 const SELECTED_COUNTRIES_KEY = "dashboard.selectedCountries"
 const HIDDEN_COUNTRIES_KEY = "dashboard.hiddenCountries"
 const COUNTRY_COLORS_KEY = "dashboard.countryColors"
+
+type ServerSettings = {
+  selectedCountries?: string[]
+  hiddenCountries?: string[]
+  countryColors?: Record<string, string>
+  theme?: string | null
+}
+
+function saveSettingsToServer(patch: Partial<ServerSettings>) {
+  fetch("/api/settings", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(patch),
+  }).catch(() => {})
+}
 
 export default function Dashboard() {
   const [selectedCountries, setSelectedCountries] = useState<string[]>([])
@@ -21,55 +37,96 @@ export default function Dashboard() {
   const { feeds, addFeed, removeFeed, updateFeed, updateFeedColor, toggleFeedVisibility } = useIcsFeeds()
 
   useEffect(() => {
+    // Fast path: load from localStorage for instant render
     const storedTheme = localStorage.getItem("dashboard.theme")
     const dark = storedTheme === "dark" || (!storedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches)
     setIsDark(dark)
     document.documentElement.classList.toggle("dark", dark)
+    let localCountries: string[] = []
+    let localHidden: string[] = []
+    let localColors: Record<string, string> = {}
     try {
       const stored = localStorage.getItem(SELECTED_COUNTRIES_KEY)
-      if (stored) setSelectedCountries(JSON.parse(stored))
+      if (stored) { localCountries = JSON.parse(stored); setSelectedCountries(localCountries) }
     } catch {}
     try {
       const stored = localStorage.getItem(HIDDEN_COUNTRIES_KEY)
-      if (stored) setHiddenCountries(JSON.parse(stored))
+      if (stored) { localHidden = JSON.parse(stored); setHiddenCountries(localHidden) }
     } catch {}
     try {
       const stored = localStorage.getItem(COUNTRY_COLORS_KEY)
-      if (stored) setCountryColors(JSON.parse(stored))
+      if (stored) { localColors = JSON.parse(stored); setCountryColors(localColors) }
     } catch {}
+
+    // Authoritative: fetch from server (server wins for keys that exist)
+    fetch("/api/settings")
+      .then((r) => r.json())
+      .then((data: ServerSettings) => {
+        if ("selectedCountries" in data && Array.isArray(data.selectedCountries)) {
+          setSelectedCountries(data.selectedCountries)
+          localStorage.setItem(SELECTED_COUNTRIES_KEY, JSON.stringify(data.selectedCountries))
+        } else if (localCountries.length > 0) {
+          saveSettingsToServer({ selectedCountries: localCountries })
+        }
+        if ("hiddenCountries" in data && Array.isArray(data.hiddenCountries)) {
+          setHiddenCountries(data.hiddenCountries)
+          localStorage.setItem(HIDDEN_COUNTRIES_KEY, JSON.stringify(data.hiddenCountries))
+        } else if (localHidden.length > 0) {
+          saveSettingsToServer({ hiddenCountries: localHidden })
+        }
+        if ("countryColors" in data && data.countryColors && typeof data.countryColors === "object") {
+          setCountryColors(data.countryColors)
+          localStorage.setItem(COUNTRY_COLORS_KEY, JSON.stringify(data.countryColors))
+        } else if (Object.keys(localColors).length > 0) {
+          saveSettingsToServer({ countryColors: localColors })
+        }
+        if ("theme" in data && (data.theme === "dark" || data.theme === "light")) {
+          const serverDark = data.theme === "dark"
+          setIsDark(serverDark)
+          document.documentElement.classList.toggle("dark", serverDark)
+          localStorage.setItem("dashboard.theme", data.theme)
+        } else if (storedTheme) {
+          saveSettingsToServer({ theme: storedTheme })
+        }
+      })
+      .catch(() => {})
   }, [])
 
-  const { events, isLoading, error, feedErrors, refetch } = useCalendarEvents(selectedCountries, feeds)
+  const { events, isLoading, isRefreshing, error, feedErrors, refetch } = useCalendarEvents(selectedCountries, feeds)
+  const [justRefreshed, setJustRefreshed] = useState(false)
+
+  async function handleRefetch() {
+    await refetch()
+    setJustRefreshed(true)
+    setTimeout(() => setJustRefreshed(false), 1500)
+  }
 
   function addCountry(code: string, color: string) {
-    setSelectedCountries((prev) => {
-      if (prev.includes(code)) return prev
-      const next = [...prev, code]
-      localStorage.setItem(SELECTED_COUNTRIES_KEY, JSON.stringify(next))
-      return next
-    })
-    updateCountryColor(code, color)
+    if (selectedCountries.includes(code)) return
+    const nextCountries = [...selectedCountries, code]
+    const nextColors = { ...countryColors, [code]: color }
+    setSelectedCountries(nextCountries)
+    setCountryColors(nextColors)
+    localStorage.setItem(SELECTED_COUNTRIES_KEY, JSON.stringify(nextCountries))
+    localStorage.setItem(COUNTRY_COLORS_KEY, JSON.stringify(nextColors))
+    saveSettingsToServer({ selectedCountries: nextCountries, countryColors: nextColors })
   }
 
   function removeCountry(code: string) {
-    setSelectedCountries((prev) => {
-      const next = prev.filter((c) => c !== code)
-      localStorage.setItem(SELECTED_COUNTRIES_KEY, JSON.stringify(next))
-      return next
-    })
-    setHiddenCountries((prev) => {
-      const next = prev.filter((c) => c !== code)
-      localStorage.setItem(HIDDEN_COUNTRIES_KEY, JSON.stringify(next))
-      return next
-    })
+    const nextCountries = selectedCountries.filter((c) => c !== code)
+    const nextHidden = hiddenCountries.filter((c) => c !== code)
+    setSelectedCountries(nextCountries)
+    setHiddenCountries(nextHidden)
+    localStorage.setItem(SELECTED_COUNTRIES_KEY, JSON.stringify(nextCountries))
+    localStorage.setItem(HIDDEN_COUNTRIES_KEY, JSON.stringify(nextHidden))
+    saveSettingsToServer({ selectedCountries: nextCountries, hiddenCountries: nextHidden })
   }
 
   function updateCountryColor(code: string, color: string) {
-    setCountryColors((prev) => {
-      const next = { ...prev, [code]: color }
-      localStorage.setItem(COUNTRY_COLORS_KEY, JSON.stringify(next))
-      return next
-    })
+    const next = { ...countryColors, [code]: color }
+    setCountryColors(next)
+    localStorage.setItem(COUNTRY_COLORS_KEY, JSON.stringify(next))
+    saveSettingsToServer({ countryColors: next })
   }
 
   // Client-side visibility filter + holiday color override
@@ -95,15 +152,18 @@ export default function Dashboard() {
     const next = !isDark
     setIsDark(next)
     document.documentElement.classList.toggle("dark", next)
-    localStorage.setItem("dashboard.theme", next ? "dark" : "light")
+    const theme = next ? "dark" : "light"
+    localStorage.setItem("dashboard.theme", theme)
+    saveSettingsToServer({ theme })
   }
 
   function toggleCountryVisibility(code: string) {
-    setHiddenCountries((prev) => {
-      const next = prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
-      localStorage.setItem(HIDDEN_COUNTRIES_KEY, JSON.stringify(next))
-      return next
-    })
+    const next = hiddenCountries.includes(code)
+      ? hiddenCountries.filter((c) => c !== code)
+      : [...hiddenCountries, code]
+    setHiddenCountries(next)
+    localStorage.setItem(HIDDEN_COUNTRIES_KEY, JSON.stringify(next))
+    saveSettingsToServer({ hiddenCountries: next })
   }
 
   return (
@@ -120,11 +180,24 @@ export default function Dashboard() {
             <Bell size={16} />
           </button>
           <button
-            onClick={refetch}
-            title="Refresh"
-            className="p-1.5 rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            onClick={handleRefetch}
+            title={isRefreshing ? "Refreshing…" : "Refresh"}
+            disabled={isRefreshing}
+            className={clsx(
+              "p-1.5 rounded-md border transition-all duration-200",
+              isRefreshing
+                ? "border-blue-400 bg-blue-50 dark:bg-blue-900/30 text-blue-500 dark:text-blue-400"
+                : justRefreshed
+                ? "border-green-400 bg-green-50 dark:bg-green-900/30 text-green-500 dark:text-green-400"
+                : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            )}
           >
-            <RefreshCw size={16} />
+            {isRefreshing
+              ? <RefreshCw size={16} className="animate-spin" />
+              : justRefreshed
+              ? <Check size={16} />
+              : <RefreshCw size={16} />
+            }
           </button>
           <button
             onClick={toggleTheme}

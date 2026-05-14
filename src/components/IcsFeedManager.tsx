@@ -251,7 +251,8 @@ function AddFeedForm({
 
       {error && <p className="w-full text-sm text-red-600">{error}</p>}
       <p className="w-full text-xs text-gray-400 dark:text-gray-500">
-        In Outlook Web → Calendar → Settings → Shared calendars → Publish a calendar → copy the ICS link.
+        <strong className="font-medium">Google Calendar:</strong> Settings → [Calendar] → Integrate calendar → <em>Secret address in iCal format</em> (not the public URL).<br />
+        <strong className="font-medium">Outlook:</strong> Calendar → Settings → Shared calendars → Publish → copy ICS link.
       </p>
     </div>
   )
@@ -285,6 +286,8 @@ export default function IcsFeedManager({ feeds, feedErrors, onAdd, onRemove, onU
     setShowAddForm(true)
   }
 
+  const feedsWithErrors = feeds.filter((f) => feedErrors[f.id])
+
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
@@ -314,6 +317,13 @@ export default function IcsFeedManager({ feeds, feedErrors, onAdd, onRemove, onU
           </button>
         )}
       </div>
+
+      {feedsWithErrors.map((feed) => (
+        <div key={feed.id} className="flex items-start gap-1.5 px-2.5 py-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-xs text-amber-800 dark:text-amber-300">
+          <AlertTriangle size={12} className="mt-0.5 shrink-0 text-amber-500" />
+          <span><strong>{feed.label}:</strong> {feedErrors[feed.id]}</span>
+        </div>
+      ))}
 
       {editingId && (() => {
         const feed = feeds.find((f) => f.id === editingId)

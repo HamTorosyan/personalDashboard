@@ -67,8 +67,11 @@ function navigateDate(view: CalendarView, date: Date, dir: 1 | -1): Date {
 
 function filterEvents(events: CalendarEvent[], start: Date, end: Date) {
   return events.filter((e) => {
-    try { const s = parseISO(e.start); return s >= start && s < end }
-    catch { return false }
+    try {
+      const s = parseISO(e.start)
+      const eEnd = parseISO(e.end)
+      return s < end && eEnd > start
+    } catch { return false }
   })
 }
 
@@ -140,6 +143,23 @@ export default function TwoWeekCalendar({
   const grid2Ref = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>
   const isSyncing = useRef(false)
   const settingsRef = useRef<HTMLDivElement>(null)
+  const didAutoNavigate = useRef(false)
+
+  // Auto-navigate to nearest ICS event when they first load
+  useEffect(() => {
+    if (didAutoNavigate.current) return
+    const icsEvents = events.filter((e) => e.source === "ics")
+    if (icsEvents.length === 0) return
+    didAutoNavigate.current = true
+    const today = new Date()
+    const nearest = icsEvents
+      .map((e) => {
+        try { return { date: parseISO(e.start), event: e } } catch { return null }
+      })
+      .filter(Boolean)
+      .sort((a, b) => Math.abs(a!.date.getTime() - today.getTime()) - Math.abs(b!.date.getTime() - today.getTime()))[0]
+    if (nearest) setCurrentDate(nearest.date)
+  }, [events])
 
   const isWeekMode = view === "week" || view === "work-week"
   const calendarWide = !isWeekMode || showNextWeek
@@ -249,7 +269,7 @@ export default function TwoWeekCalendar({
               setShowSettings((v) => !v)
             }}
             className={clsx(
-              "p-1.5 rounded-md border transition-colors",
+              "relative p-1.5 rounded-md border transition-colors",
               showSettings
                 ? "border-blue-400 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
                 : "border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -257,6 +277,9 @@ export default function TwoWeekCalendar({
             title="Calendar settings"
           >
             <Settings size={15} />
+            {Object.keys(feedErrors).length > 0 && (
+              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-400 border border-white dark:border-gray-900" />
+            )}
           </button>
 
           {showSettings && (

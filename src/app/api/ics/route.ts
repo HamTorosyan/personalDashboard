@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import ical, { VEvent } from "node-ical"
 import { RRule, RRuleSet, rrulestr } from "rrule"
-import { startOfMonth, endOfMonth, addMonths, subMonths } from "date-fns"
+import { startOfMonth, endOfMonth, addMonths, subMonths, format } from "date-fns"
 import type { CalendarEvent, EventColor } from "@/lib/types"
 
 interface IcsFeedInput {
@@ -85,8 +85,8 @@ function expandRecurring(event: VEvent, rangeStart: Date, rangeEnd: Date): Array
 export async function POST(req: NextRequest) {
   const { feeds } = (await req.json()) as { feeds: IcsFeedInput[] }
   const now = new Date()
-  const rangeStart = startOfMonth(subMonths(now, 1))
-  const rangeEnd = endOfMonth(addMonths(now, 2))
+  const rangeStart = startOfMonth(subMonths(now, 12))
+  const rangeEnd = endOfMonth(addMonths(now, 12))
 
   const allEvents: CalendarEvent[] = []
   const errors: Record<string, string> = {}
@@ -113,8 +113,9 @@ export async function POST(req: NextRequest) {
         const text = await res.text()
 
         if (!text.trimStart().startsWith("BEGIN:VCALENDAR")) {
-          errors[feed.id] =
-            "URL did not return a valid ICS file — make sure you copied the ICS link, not the HTML link"
+          errors[feed.id] = text.toLowerCase().includes("<html")
+            ? "Google Calendar public URLs only work if you've enabled public sharing. Use the Secret address instead: Google Calendar → Settings → [Calendar] → Integrate calendar → Secret address in iCal format"
+            : "URL did not return a valid ICS file — make sure you copied the ICS link, not the HTML link"
           return
         }
 
@@ -165,11 +166,19 @@ export async function POST(req: NextRequest) {
           if (event.rrule) {
             const occurrences = expandRecurring(event, rangeStart, rangeEnd)
             for (const { start, end } of occurrences) {
+              // All-day recurring dates come from Date.UTC() inside expandRecurring,
+              // so use UTC getters to recover the intended calendar date.
+              const startStr = isAllDay
+                ? `${start.getUTCFullYear()}-${String(start.getUTCMonth() + 1).padStart(2, "0")}-${String(start.getUTCDate()).padStart(2, "0")}`
+                : start.toISOString()
+              const endStr = isAllDay
+                ? `${end.getUTCFullYear()}-${String(end.getUTCMonth() + 1).padStart(2, "0")}-${String(end.getUTCDate()).padStart(2, "0")}`
+                : end.toISOString()
               allEvents.push({
                 ...baseProps,
                 id: `ics-${feed.id}-${event.uid}-${start.getTime()}`,
-                start: start.toISOString(),
-                end: end.toISOString(),
+                start: startStr,
+                end: endStr,
               })
               count++
             }
@@ -182,8 +191,10 @@ export async function POST(req: NextRequest) {
           allEvents.push({
             ...baseProps,
             id: `ics-${feed.id}-${event.uid}`,
-            start: baseStart.toISOString(),
-            end: baseEnd.toISOString(),
+            // All-day dates from node-ical are local-time Date objects — format in local time
+            // to avoid the UTC-midnight off-by-one-day bug in Western timezones.
+            start: isAllDay ? format(baseStart, "yyyy-MM-dd") : baseStart.toISOString(),
+            end: isAllDay ? format(baseEnd, "yyyy-MM-dd") : baseEnd.toISOString(),
           })
           count++
         }

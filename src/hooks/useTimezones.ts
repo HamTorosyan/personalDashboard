@@ -47,6 +47,7 @@ export function useTimezones() {
   // Refs so async callbacks always see latest state
   const currentCityRef = useRef<SavedCity>(PLACEHOLDER)
   const savedCitiesRef = useRef<SavedCity[]>([])
+  const serverLoadedRef = useRef(false)
   currentCityRef.current = currentCity
   savedCitiesRef.current = savedCities
 
@@ -70,10 +71,18 @@ export function useTimezones() {
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!data) return
-        if (data.currentCity) setCurrentCity(data.currentCity)
-        if (data.savedCities?.length) setSavedCities(data.savedCities)
+        if (data.currentCity) {
+          currentCityRef.current = data.currentCity
+          setCurrentCity(data.currentCity)
+        }
+        if (data.savedCities?.length) {
+          savedCitiesRef.current = data.savedCities
+          setSavedCities(data.savedCities)
+        }
+        // Mark loaded AFTER refs are updated so detectLocation can't race them
+        serverLoadedRef.current = true
       })
-      .catch(() => {})
+      .catch(() => { serverLoadedRef.current = true })
   }, [])
 
   // Tick every 30 seconds
@@ -105,7 +114,11 @@ export function useTimezones() {
         setCurrentCity((prev) => {
           const userHasEdited = prev.city !== "" && prev.alias !== prev.city
           const next = { ...detectedCity, alias: userHasEdited ? prev.alias : detectedCity.city }
-          saveToServer(next, savedCitiesRef.current)
+          // Only persist once the server load has completed so we don't overwrite
+          // savedCities with an empty array while the server fetch is still in flight.
+          if (serverLoadedRef.current) {
+            saveToServer(next, savedCitiesRef.current)
+          }
           return next
         })
 

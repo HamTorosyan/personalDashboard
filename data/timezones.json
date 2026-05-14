@@ -11,31 +11,58 @@
   },
   "savedCities": [
     {
-      "id": "1778629006271",
-      "alias": "Vrezh",
+      "id": "1",
+      "alias": "Amsterdam",
+      "city": "Amsterdam",
+      "country": "Netherlands",
+      "timezone": "Europe/Amsterdam",
+      "latitude": 52.3676,
+      "longitude": 4.9041
+    },
+    {
+      "id": "2",
+      "alias": "Los Angeles",
       "city": "Los Angeles",
       "country": "United States",
       "timezone": "America/Los_Angeles",
-      "latitude": 34.05223,
-      "longitude": -118.24368
+      "latitude": 34.0522,
+      "longitude": -118.2437
     },
     {
-      "id": "1778629019935",
-      "alias": "SDU",
-      "city": "Amsterdam",
-      "country": "The Netherlands",
-      "timezone": "Europe/Amsterdam",
-      "latitude": 52.37403,
-      "longitude": 4.88969
-    },
-    {
-      "id": "1778629028866",
-      "alias": "Intetics",
-      "city": "Kiev",
+      "id": "3",
+      "alias": "Saint Petersburg",
+      "city": "Saint Petersburg",
       "country": "Russia",
-      "timezone": "Asia/Yekaterinburg",
-      "latitude": 59.5987,
-      "longitude": 55.2078
+      "timezone": "Europe/Moscow",
+      "latitude": 59.9343,
+      "longitude": 30.3351
+    },
+    {
+      "id": "4",
+      "alias": "Sochi",
+      "city": "Sochi",
+      "country": "Russia",
+      "timezone": "Europe/Moscow",
+      "latitude": 43.5992,
+      "longitude": 39.7257
+    },
+    {
+      "id": "5",
+      "alias": "Myrtle Beach",
+      "city": "Myrtle Beach",
+      "country": "United States",
+      "timezone": "America/New_York",
+      "latitude": 33.6891,
+      "longitude": -78.8867
+    },
+    {
+      "id": "6",
+      "alias": "Boston",
+      "city": "Boston",
+      "country": "United States",
+      "timezone": "America/New_York",
+      "latitude": 42.3601,
+      "longitude": -71.0589
     }
   ]
 }
